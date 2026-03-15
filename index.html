@@ -2,8 +2,52 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<title>🍻 割り勘計算</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="割り勘">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="割り勘">
+<meta name="theme-color" content="#c8501a">
+<link rel="manifest" href="manifest.json">
+<script>
+// インラインでアイコンをCanvas生成してapple-touch-iconに設定
+(function(){
+  const c = document.createElement('canvas');
+  c.width = 180; c.height = 180;
+  const ctx = c.getContext('2d');
+  // 背景
+  const r = 36;
+  ctx.beginPath();
+  ctx.moveTo(r,0); ctx.lineTo(180-r,0);
+  ctx.quadraticCurveTo(180,0,180,r);
+  ctx.lineTo(180,180-r);
+  ctx.quadraticCurveTo(180,180,180-r,180);
+  ctx.lineTo(r,180);
+  ctx.quadraticCurveTo(0,180,0,180-r);
+  ctx.lineTo(0,r);
+  ctx.quadraticCurveTo(0,0,r,0);
+  ctx.closePath();
+  ctx.fillStyle = '#c8501a';
+  ctx.fill();
+  // 絵文字
+  ctx.font = '100px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🍻', 90, 95);
+  // apple-touch-icon として設定
+  const link = document.createElement('link');
+  link.rel = 'apple-touch-icon';
+  link.href = c.toDataURL('image/png');
+  document.head.appendChild(link);
+  // favicon も設定
+  const fav = document.createElement('link');
+  fav.rel = 'icon';
+  fav.href = c.toDataURL('image/png');
+  document.head.appendChild(fav);
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>飲み会 割り勘計算</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
