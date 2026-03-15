@@ -29,6 +29,7 @@
   --radius: 14px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+input, textarea, select { font-size: 16px !important; }
 html, body { overflow-x: hidden; max-width: 100%; }
 body {
   font-family: 'Noto Sans JP', sans-serif;
@@ -86,12 +87,12 @@ header p { margin-top: 5px; font-size: 0.78rem; color: var(--muted); letter-spac
   flex: 1; min-width: 0;
   background: transparent; border: none; outline: none;
   padding: 9px 10px 9px 2px;
-  font-family: 'DM Mono', monospace; font-size: 0.88rem; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 16px; color: var(--text);
 }
 /* 通常テキスト入力 */
 input[type="text"] {
   background: var(--surface2); border: 1.5px solid var(--border); border-radius: 9px;
-  color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 0.92rem;
+  color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 16px;
   padding: 9px 12px; width: 100%; outline: none; transition: border-color 0.18s;
 }
 input[type="text"]:focus { border-color: var(--accent); }
