@@ -57,8 +57,9 @@ header p { margin-top: 5px; font-size: 0.78rem; color: var(--muted); letter-spac
 }
 .card-title::after { content:''; flex:1; height:1px; background:var(--border); }
 
-.row3 { display: grid; grid-template-columns: repeat(3, 110px); gap: 8px; }
+.row3 { display: flex; gap: 2%; }
 .field label { display: block; font-size: 0.65rem; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.02em; white-space: nowrap; }
+.row3 .field { flex: 1; min-width: 0; }
 
 /* ── ¥ flex レイアウト ── */
 .yen-wrap {
@@ -259,7 +260,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 .note { font-size: 0.7rem; color: var(--muted); line-height: 1.7; }
 
 @media (max-width: 480px) {
-  .row3 { grid-template-columns: 1fr 1fr; }
+
   .consume-grid { grid-template-columns: repeat(2,1fr); }
   .res-table th:nth-child(4), .res-table td:nth-child(4) { display: none; }
 }
@@ -286,18 +287,18 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
 <div class="card">
   <div class="card-title">飲み物の単価</div>
-  <div class="row3" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+  <div class="row3">
     <div class="field">
       <label><span class="dot dot-beer"></span>ビール</label>
-      <div class="yen-wrap" style="width:100px;"><span class="yen-sym">¥</span><input type="number" id="price-beer" value="600" min="0" step="50"></div>
+      <div class="yen-wrap"><span class="yen-sym">¥</span><input type="number" id="price-beer" value="600" min="0" step="50"></div>
     </div>
     <div class="field">
       <label><span class="dot dot-wine"></span>ワイン類</label>
-      <div class="yen-wrap" style="width:100px;"><span class="yen-sym">¥</span><input type="number" id="price-wine" value="1200" min="0" step="50"></div>
+      <div class="yen-wrap"><span class="yen-sym">¥</span><input type="number" id="price-wine" value="1200" min="0" step="50"></div>
     </div>
     <div class="field">
       <label><span class="dot dot-soft"></span>ノンアル</label>
-      <div class="yen-wrap" style="width:100px;"><span class="yen-sym">¥</span><input type="number" id="price-soft" value="400" min="0" step="50"></div>
+      <div class="yen-wrap"><span class="yen-sym">¥</span><input type="number" id="price-soft" value="400" min="0" step="50"></div>
     </div>
   </div>
 </div>
