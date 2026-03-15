@@ -568,6 +568,22 @@ addPattern({ name:'たくさん飲む', count:3, beer:5, wine:1, soft:0, food:2 
 addPattern({ name:'普通に飲む',   count:2, beer:2, wine:0, soft:0, food:2 });
 addPattern({ name:'ノンアル',     count:1, beer:0, wine:0, soft:3, food:3 });
 document.getElementById('total').value = 38000;
+
+// テキストボックスからフォーカスが外れたらズームをリセット
+document.addEventListener('focusout', function(e) {
+  if (e.target.tagName === 'INPUT') {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0');
+    // 一瞬だけmaximum-scaleを外してiOSのズームリセットを促す
+    setTimeout(() => {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0');
+      setTimeout(() => {
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0');
+      }, 50);
+    }, 50);
+  }
+});
+
 </script>
 </body>
 </html>
