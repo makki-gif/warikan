@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>飲み会 割り勘計算</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f3ee;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --border: #ddd8cc;
+  --text: #1a1814;
+  --muted: #9b9284;
+  --accent: #c8501a;
+  --accent2: #2a6496;
+  --accent3: #3a8a5a;
+  --yellow: #e8a020;
+  --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 28px 16px 100px;
+}
+.container { max-width: 680px; margin: 0 auto; }
+
+header { text-align: center; margin-bottom: 28px; }
+header h1 { font-size: clamp(1.4rem,4vw,2rem); font-weight: 900; letter-spacing: -0.03em; color: var(--accent); }
+header p { margin-top: 5px; font-size: 0.78rem; color: var(--muted); letter-spacing: 0.08em; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.card-title {
+  font-size: 0.67rem; font-weight: 700; letter-spacing: 0.14em;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.row3 { display: grid; grid-template-columns: repeat(3, 110px); gap: 8px; }
+.field label { display: block; font-size: 0.65rem; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.02em; white-space: nowrap; }
+
+/* ── ¥ flex レイアウト ── */
+.yen-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  overflow: hidden;
+  transition: border-color 0.18s;
+}
+.yen-wrap:focus-within { border-color: var(--accent); }
+.yen-sym {
+  padding: 0 4px 0 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  user-select: none;
+  flex-shrink: 0;
+}
+.yen-wrap input {
+  flex: 1; min-width: 0;
+  background: transparent; border: none; outline: none;
+  padding: 9px 10px 9px 2px;
+  font-family: 'DM Mono', monospace; font-size: 0.88rem; color: var(--text);
+}
+/* 通常テキスト入力 */
+input[type="text"] {
+  background: var(--surface2); border: 1.5px solid var(--border); border-radius: 9px;
+  color: var(--text); font-family: 'Noto Sans JP', sans-serif; font-size: 0.92rem;
+  padding: 9px 12px; width: 100%; outline: none; transition: border-color 0.18s;
+}
+input[type="text"]:focus { border-color: var(--accent); }
+/* スピンボタン非表示 */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+/* ── スワイプ数値 ── */
+.swipe-num {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--surface2); border: 1.5px solid var(--border); border-radius: 9px;
+  cursor: ew-resize; user-select: none; touch-action: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  min-height: 58px; gap: 0; position: relative;
+}
+.swipe-num:hover { border-color: #aaa8a0; }
+.swipe-num.dragging {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200,80,26,0.15);
+  cursor: grabbing;
+}
+.swipe-num .sn-hint {
+  font-size: 0.55rem; color: var(--muted); letter-spacing: 0.06em;
+  line-height: 1; padding-top: 5px; opacity: 0.7;
+}
+.swipe-num .sn-val {
+  font-family: 'DM Mono', monospace; font-size: 1.4rem; font-weight: 700;
+  color: var(--text); line-height: 1; padding: 2px 0;
+  transition: color 0.1s;
+}
+.swipe-num.dragging .sn-val { color: var(--accent); }
+.swipe-num .sn-unit {
+  font-size: 0.62rem; color: var(--muted); padding-bottom: 5px;
+}
+
+/* パターンカード */
+.pattern-list { display: flex; flex-direction: column; gap: 12px; }
+.pattern-card {
+  border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden;
+  animation: slideIn 0.22s ease; background: var(--surface);
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(-6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.pattern-header {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 12px 16px; background: var(--surface2); border-bottom: 1px solid var(--border);
+}
+.pattern-header-top { display: flex; align-items: center; gap: 10px; }
+.pattern-label {
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+  color: #fff; padding: 4px 12px; border-radius: 6px; white-space: nowrap;
+}
+.pattern-name-input { width: 100%; }
+
+.count-wrap {
+  display: flex; align-items: center;
+  border: 1.5px solid var(--border); border-radius: 9px; overflow: hidden;
+  background: var(--surface);
+}
+.count-btn {
+  background: transparent; border: none; color: var(--muted);
+  cursor: pointer; font-size: 1.1rem; padding: 6px 12px; line-height: 1;
+  transition: all 0.15s;
+}
+.count-btn:hover { background: var(--surface2); color: var(--text); }
+.count-num {
+  font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 700;
+  min-width: 32px; text-align: center; color: var(--accent);
+  border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+  padding: 6px 4px;
+}
+.count-label { font-size: 0.7rem; color: var(--muted); white-space: nowrap; }
+
+.del-btn {
+  background: transparent; border: 1.5px solid var(--border); border-radius: 7px;
+  color: #b06050; cursor: pointer; font-size: 0.82rem; padding: 7px; width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+  transition: all 0.15s; line-height: 1;
+}
+.del-btn:hover { background: #e05a3a; color: #fff; border-color: #e05a3a; }
+
+.pattern-body { padding: 14px 16px; }
+.consume-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ci label { display: block; font-size: 0.67rem; color: var(--muted); margin-bottom: 5px; letter-spacing: 0.03em; }
+
+.dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+.dot-beer { background: var(--yellow); }
+.dot-wine { background: var(--accent); }
+.dot-soft { background: var(--accent3); }
+.dot-food { background: var(--accent2); }
+
+.add-btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: transparent; border: 1.5px dashed var(--border); border-radius: 10px;
+  color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.88rem;
+  padding: 12px; width: 100%; transition: all 0.18s; margin-top: 4px;
+}
+.add-btn:hover { border-color: var(--accent); color: var(--accent); background: #fdf5f0; }
+
+.headcount-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 14px; font-size: 0.82rem; color: var(--muted);
+  margin-top: 10px;
+}
+.headcount-badge strong { color: var(--accent); font-family: 'DM Mono', monospace; font-size: 1.1rem; }
+
+.calc-btn {
+  display: block; width: 100%; padding: 16px;
+  background: var(--accent); border: none; border-radius: var(--radius);
+  color: #fff; font-family: inherit; font-size: 1rem; font-weight: 700;
+  letter-spacing: 0.06em; cursor: pointer; transition: all 0.18s;
+  margin: 6px 0 12px; box-shadow: 0 4px 16px rgba(200,80,26,0.25);
+}
+.calc-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.calc-btn:active { transform: none; }
+
+.error {
+  background: #fdecea; border: 1.5px solid #f0a090; border-radius: 9px;
+  color: var(--accent); font-size: 0.85rem; padding: 11px 16px;
+  margin-bottom: 10px; display: none;
+}
+.error.show { display: block; }
+
+.result-card {
+  display: none; background: var(--surface); border: 2px solid var(--accent);
+  border-radius: var(--radius); padding: 22px;
+  box-shadow: 0 4px 20px rgba(200,80,26,0.12); animation: fadeUp 0.3s ease;
+}
+.result-card.show { display: block; }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.res-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.res-table th {
+  font-size: 0.65rem; letter-spacing: 0.1em; color: var(--muted);
+  text-align: left; padding: 4px 8px 8px; border-bottom: 2px solid var(--border); font-weight: 700;
+}
+.res-table th.r { text-align: right; }
+.res-table td { padding: 11px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.res-table tr:last-child td { border-bottom: none; }
+.res-pattern { font-weight: 700; font-size: 0.95rem; }
+.res-pname { font-size: 0.78rem; color: var(--muted); margin-top: 1px; }
+.res-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.tag { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; white-space: nowrap; }
+.t-beer { background:#fff3cc; color:#8a6010; border:1px solid #e8c060; }
+.t-wine { background:#fde8e0; color:#8a3010; border:1px solid #e09070; }
+.t-soft { background:#e0f4e8; color:#1a6030; border:1px solid #70c890; }
+.t-food { background:#e8eef8; color:#20408a; border:1px solid #90aae0; }
+.res-unit, .res-total { text-align: right; font-family: 'DM Mono', monospace; }
+.res-unit .amount { font-size: 1.1rem; font-weight: 500; color: var(--accent); }
+.res-unit .breakdown { font-size: 0.63rem; color: var(--muted); line-height: 1.6; margin-top: 2px; }
+.res-total .amount { font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.res-total .count { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+
+.sum-check {
+  margin-top: 14px; padding: 11px 14px; background: var(--surface2);
+  border-radius: 9px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;
+}
+.sum-check .sl { color: var(--muted); }
+.sum-check .sv { font-family: 'DM Mono', monospace; font-weight: 700; }
+.sum-check .sv.ok { color: var(--accent3); }
+.sum-check .sv.ng { color: var(--accent); }
+.note { font-size: 0.7rem; color: var(--muted); line-height: 1.7; }
+
+@media (max-width: 480px) {
+  .row3 { grid-template-columns: 1fr 1fr; }
+  .consume-grid { grid-template-columns: repeat(2,1fr); }
+  .res-table th:nth-child(4), .res-table td:nth-child(4) { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <h1>🍻 飲み会 割り勘</h1>
+  <p>パターン×人数方式 · 消費量ベース公平按分</p>
+</header>
+
+<div class="card">
+  <div class="card-title">お会計</div>
+  <div class="field">
+    <label>合計金額</label>
+    <div class="yen-wrap" style="max-width:260px;">
+      <span class="yen-sym">¥</span>
+      <input type="number" id="total" placeholder="例: 42000" min="0" step="100">
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">飲み物の単価</div>
+  <div class="row3" style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
+    <div class="field">
+      <label><span class="dot dot-beer"></span>ビール</label>
+      <div class="yen-wrap" style="width:100px;"><span class="yen-sym">¥</span><input type="number" id="price-beer" value="600" min="0" step="50"></div>
+    </div>
+    <div class="field">
+      <label><span class="dot dot-wine"></span>ワイン類</label>
+      <div class="yen-wrap" style="width:100px;"><span class="yen-sym">¥</span><input type="number" id="price-wine" value="1200" min="0" step="50"></div>
+    </div>
+    <div class="field">
+      <label><span class="dot dot-soft"></span>ノンアル</label>
+      <div class="yen-wrap" style="width:100px;"><span class="yen-sym">¥</span><input type="number" id="price-soft" value="400" min="0" step="50"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">飲み方・食べ方パターン</div>
+  <div class="pattern-list" id="patternList"></div>
+  <button class="add-btn" id="addBtn" onclick="addPattern()">＋ パターンを追加</button>
+  <div><div class="headcount-badge">👥 合計 <strong id="totalCount">0</strong> 人</div></div>
+</div>
+
+<div class="error" id="errMsg"></div>
+<button class="calc-btn" onclick="calculate()">計算する →</button>
+
+<div class="result-card" id="resultCard">
+  <div class="card-title">計算結果</div>
+  <table class="res-table" id="resTable">
+    <thead>
+      <tr>
+        <th>パターン</th>
+        <th>内訳</th>
+        <th class="r">1人あたり</th>
+        <th class="r">小計</th>
+      </tr>
+    </thead>
+    <tbody id="resTbody"></tbody>
+  </table>
+  <div class="sum-check">
+    <span class="sl">合計確認</span>
+    <span class="sv" id="sumCheck"></span>
+  </div>
+  <p class="note" style="margin-top:12px;">※ 飲み物実費が請求額を超える場合は比率で圧縮。端数は最後のパターンの1人に加算。</p>
+</div>
+
+</div>
+<script>
+let idCtr = 0;
+const COLORS = ['#c8501a','#2a6496','#3a8a5a','#8a4a9a','#c88020','#5a7a2a','#1a6070','#9a3050'];
+
+/* ── スワイプ数値 ── */
+function makeSwipeNum(inputId, unit, min, max) {
+  const wrap = document.createElement('div');
+  wrap.className = 'swipe-num';
+  wrap.innerHTML = `
+    <div class="sn-hint">← スワイプ →</div>
+    <div class="sn-val" id="sv-${inputId}">0</div>
+    <div class="sn-unit">${unit}</div>
+    <input type="hidden" id="${inputId}" value="0">
+  `;
+
+  let startX = 0, startVal = 0, dragging = false;
+
+  function getVal() { return parseInt(document.getElementById(inputId).value) || 0; }
+  function setVal(v) {
+    v = Math.max(min, Math.min(max, v));
+    document.getElementById(inputId).value = v;
+    document.getElementById('sv-' + inputId).textContent = v;
+  }
+
+  function onStart(e) {
+    dragging = true;
+    startX = e.touches ? e.touches[0].clientX : e.clientX;
+    startVal = getVal();
+    wrap.classList.add('dragging');
+    e.preventDefault();
+  }
+  function onMove(e) {
+    if (!dragging) return;
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const delta = Math.round((x - startX) / 14); // 14px per step
+    setVal(startVal + delta);
+    e.preventDefault();
+  }
+  function onEnd() {
+    dragging = false;
+    wrap.classList.remove('dragging');
+  }
+
+  wrap.addEventListener('mousedown', onStart);
+  wrap.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+
+  // クリックで直接入力も可能
+  wrap.addEventListener('dblclick', () => {
+    const v = prompt(unit + 'の数を入力:', getVal());
+    if (v !== null && !isNaN(parseInt(v))) setVal(parseInt(v));
+  });
+
+  return wrap;
+}
+
+function addPattern(opts = {}) {
+  const list = document.getElementById('patternList');
+  if (list.children.length >= 8) { showError('パターンは最大8つまでです'); return; }
+  const id = ++idCtr;
+  const idx = list.children.length;
+  const color = COLORS[idx % COLORS.length];
+  const label = String.fromCharCode(65 + idx);
+
+  const div = document.createElement('div');
+  div.className = 'pattern-card';
+  div.id = 'pc-' + id;
+
+  div.innerHTML = `
+    <div class="pattern-header">
+      <div class="pattern-header-top">
+        <span class="pattern-label" style="background:${color}">${label}パターン</span>
+        <div class="count-wrap">
+          <button class="count-btn" onclick="changeCount(${id},-1)">−</button>
+          <span class="count-num" id="cnt-${id}">${opts.count||1}</span>
+          <button class="count-btn" onclick="changeCount(${id},+1)">＋</button>
+        </div>
+        <span class="count-label">人</span>
+        <div style="flex:1"></div>
+        <button class="del-btn" onclick="removePattern(${id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+      <input type="text" class="pattern-name-input" placeholder="パターン名（例: たくさん飲む）" id="pname-${id}" value="${opts.name||''}">
+    </div>
+    <div class="pattern-body">
+      <div class="consume-grid" id="cgrid-${id}"></div>
+    </div>
+  `;
+  list.appendChild(div);
+
+  const grid = div.querySelector('#cgrid-' + id);
+  const items = [
+    { key: 'beer', dot: 'dot-beer', label: 'ビール・サワー', unit: '杯', max: 50, def: opts.beer??0 },
+    { key: 'wine', dot: 'dot-wine', label: 'ワイン・日本酒', unit: '杯', max: 50, def: opts.wine??0 },
+    { key: 'soft', dot: 'dot-soft', label: 'ソフトドリンク', unit: '杯', max: 50, def: opts.soft??0 },
+    { key: 'food', dot: 'dot-food', label: '料理',           unit: '皿', max: 99, def: opts.food??1 },
+  ];
+
+  items.forEach(item => {
+    const ci = document.createElement('div');
+    ci.className = 'ci';
+    const lbl = document.createElement('label');
+    lbl.innerHTML = `<span class="dot ${item.dot}"></span>${item.label}`;
+    ci.appendChild(lbl);
+    const sn = makeSwipeNum(`${item.key}-${id}`, item.unit, 0, item.max);
+    ci.appendChild(sn);
+    grid.appendChild(ci);
+    // 初期値セット
+    document.getElementById(`${item.key}-${id}`).value = item.def;
+    document.getElementById(`sv-${item.key}-${id}`).textContent = item.def;
+  });
+
+  updateHeadcount();
+}
+
+function removePattern(id) {
+  const el = document.getElementById('pc-' + id);
+  if (el) {
+    el.style.cssText += 'opacity:0;transform:translateY(-6px);transition:all 0.18s;';
+    setTimeout(() => { el.remove(); relabelPatterns(); updateHeadcount(); }, 180);
+  }
+}
+
+function relabelPatterns() {
+  document.querySelectorAll('.pattern-card').forEach((c, i) => {
+    const lbl = c.querySelector('.pattern-label');
+    if (lbl) { lbl.textContent = String.fromCharCode(65+i)+'パターン'; lbl.style.background = COLORS[i%COLORS.length]; }
+  });
+  const btn = document.getElementById('addBtn');
+  if (btn) btn.style.display = document.querySelectorAll('.pattern-card').length >= 8 ? 'none' : '';
+}
+
+function changeCount(id, delta) {
+  const el = document.getElementById('cnt-' + id);
+  if (!el) return;
+  let v = parseInt(el.textContent) + delta;
+  el.textContent = Math.max(1, Math.min(50, v));
+  updateHeadcount();
+}
+
+function updateHeadcount() {
+  let total = 0;
+  document.querySelectorAll('[id^="cnt-"]').forEach(el => total += parseInt(el.textContent)||0);
+  document.getElementById('totalCount').textContent = total;
+}
+
+function getVal(id) { return parseFloat(document.getElementById(id)?.value) || 0; }
+
+function showError(msg) {
+  const el = document.getElementById('errMsg');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+function calculate() {
+  const total = getVal('total');
+  if (!total || total <= 0) { showError('合計金額を入力してください'); return; }
+  const priceBeer = getVal('price-beer'), priceWine = getVal('price-wine'), priceSoft = getVal('price-soft');
+  const cards = document.querySelectorAll('.pattern-card');
+  if (cards.length === 0) { showError('パターンを追加してください'); return; }
+
+  const patterns = [];
+  let li = 0;
+  for (const c of cards) {
+    const id = c.id.replace('pc-','');
+    patterns.push({
+      label: String.fromCharCode(65+li++)+'パターン',
+      name: document.getElementById('pname-'+id)?.value?.trim()||'',
+      color: COLORS[(li-1)%COLORS.length],
+      count: parseInt(document.getElementById('cnt-'+id)?.textContent)||1,
+      beer: getVal('beer-'+id), wine: getVal('wine-'+id),
+      soft: getVal('soft-'+id), food: Math.max(getVal('food-'+id),0),
+    });
+  }
+
+  const drinkPer = patterns.map(p => p.beer*priceBeer + p.wine*priceWine + p.soft*priceSoft);
+  const totalDrinkRaw = patterns.reduce((s,p,i) => s + drinkPer[i]*p.count, 0);
+  const scale = totalDrinkRaw > total ? total/totalDrinkRaw : 1;
+  const drinkAdj = drinkPer.map(d => d*scale);
+  const foodTotal = total - patterns.reduce((s,p,i) => s + drinkAdj[i]*p.count, 0);
+  const totalFoodW = patterns.reduce((s,p) => s + p.food*p.count, 0);
+
+  const perPerson = patterns.map((p,i) => {
+    const drink = drinkAdj[i];
+    const food = totalFoodW > 0 ? (p.food/totalFoodW)*foodTotal : foodTotal/patterns.reduce((s,q)=>s+q.count,0);
+    return { drink: Math.round(drink), food: Math.round(food), total: Math.round(drink+food) };
+  });
+
+  const rawSum = perPerson.reduce((s,p,i) => s + p.total*patterns[i].count, 0);
+  perPerson[perPerson.length-1].total += Math.round(total) - rawSum;
+
+  const tbody = document.getElementById('resTbody');
+  tbody.innerHTML = '';
+  for (let i = 0; i < patterns.length; i++) {
+    const p = patterns[i], pp = perPerson[i];
+    const tags = [];
+    if (p.beer>0) tags.push(`<span class="tag t-beer">🍺 ×${p.beer}杯</span>`);
+    if (p.wine>0) tags.push(`<span class="tag t-wine">🍷 ×${p.wine}杯</span>`);
+    if (p.soft>0) tags.push(`<span class="tag t-soft">🥤 ×${p.soft}杯</span>`);
+    if (p.food>0) tags.push(`<span class="tag t-food">🍗 ${p.food}皿</span>`);
+    tbody.innerHTML += `
+      <tr>
+        <td>
+          <div class="res-pattern"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${p.color};margin-right:6px;vertical-align:middle;"></span>${p.label}<span style="font-size:0.7rem;font-weight:400;color:var(--muted);margin-left:4px;">${p.name}</span></div>
+          <div class="res-pname">× ${p.count} 人</div>
+        </td>
+        <td><div class="res-tags">${tags.join('')}</div></td>
+        <td class="res-unit">
+          <div class="amount">¥${pp.total.toLocaleString()}</div>
+          <div class="breakdown">飲み ¥${pp.drink.toLocaleString()}<br>料理 ¥${pp.food.toLocaleString()}</div>
+        </td>
+        <td class="res-total">
+          <div class="amount">¥${(pp.total*p.count).toLocaleString()}</div>
+          <div class="count">¥${pp.total.toLocaleString()} × ${p.count}人</div>
+        </td>
+      </tr>`;
+  }
+
+  const grand = patterns.reduce((s,p,i) => s + perPerson[i].total*p.count, 0);
+  const sv = document.getElementById('sumCheck');
+  sv.textContent = `¥${grand.toLocaleString()} ／ ¥${Math.round(total).toLocaleString()}`;
+  sv.className = 'sv ' + (grand === Math.round(total) ? 'ok' : 'ng');
+  const rc = document.getElementById('resultCard');
+  rc.classList.add('show');
+  rc.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+addPattern({ name:'たくさん飲む', count:3, beer:5, wine:1, soft:0, food:2 });
+addPattern({ name:'普通に飲む',   count:2, beer:2, wine:0, soft:0, food:2 });
+addPattern({ name:'ノンアル',     count:1, beer:0, wine:0, soft:3, food:3 });
+document.getElementById('total').value = 38000;
+</script>
+</body>
+</html>
